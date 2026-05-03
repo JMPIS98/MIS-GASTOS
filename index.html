@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Mis Gastos"/>
+<title>Mis Gastos</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --accent:#1D9E75;--accent-light:#E1F5EE;
+  --danger:#E24B4A;--danger-light:#FCEBEB;
+  --amber:#BA7517;--amber-light:#FAEEDA;
+  --bg:#ffffff;--bg2:#f5f5f0;--bg3:#ebebeb;
+  --text:#1a1a1a;--text2:#666;--text3:#999;
+  --border:rgba(0,0,0,0.1);
+  --radius:10px;--radius-lg:14px;
+  --safe-top:env(safe-area-inset-top);
+  --safe-bottom:env(safe-area-inset-bottom);
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;
+    --text:#f2f2f7;--text2:#aeaeb2;--text3:#636366;
+    --border:rgba(255,255,255,0.1);
+  }
+}
+html,body{height:100%;overflow:hidden;background:var(--bg2);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;}
+#app{display:flex;flex-direction:column;height:100%;max-width:430px;margin:0 auto;background:var(--bg2);}
+
+/* Header */
+.header{background:var(--bg);padding:calc(var(--safe-top) + 12px) 16px 12px;border-bottom:0.5px solid var(--border);}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.header-title{font-size:20px;font-weight:700;color:var(--text);}
+.month-nav{display:flex;align-items:center;gap:8px;}
+.month-nav button{background:none;border:0.5px solid var(--border);border-radius:7px;padding:5px 10px;color:var(--text2);font-size:14px;cursor:pointer;}
+.month-label{font-size:13px;color:var(--text2);min-width:82px;text-align:center;}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat-card{background:var(--bg2);border-radius:var(--radius);padding:10px 12px;}
+.stat-label{font-size:10px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.4px;}
+.stat-value{font-size:20px;font-weight:600;color:var(--text);}
+.stat-value.green{color:var(--accent);}
+.stat-value.red{color:var(--danger);}
+.stat-value.amber{color:var(--amber);}
+
+/* Budget row */
+.budget-row{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--bg);border-bottom:0.5px solid var(--border);}
+.budget-label{font-size:11px;color:var(--text3);}
+.budget-val{font-size:13px;font-weight:600;color:var(--text);}
+.edit-btn{font-size:12px;color:var(--accent);border:0.5px solid var(--accent);border-radius:7px;padding:4px 10px;background:none;cursor:pointer;}
+
+/* Tabs */
+.tabs{display:flex;background:var(--bg);border-bottom:0.5px solid var(--border);}
+.tab{flex:1;padding:10px 0;font-size:12px;font-weight:500;color:var(--text2);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* Content */
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(80px + var(--safe-bottom));}
+
+/* Section header */
+.section-header{padding:10px 16px 5px;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;display:flex;justify-content:space-between;align-items:center;}
+.section-header button{font-size:12px;color:var(--accent);border:0.5px solid var(--accent);border-radius:7px;padding:3px 10px;background:none;cursor:pointer;font-weight:500;}
+
+/* Expense items */
+.expense-item{display:flex;align-items:center;gap:12px;padding:11px 16px;background:var(--bg);border-bottom:0.5px solid var(--border);}
+.expense-item.external{opacity:0.5;}
+.cat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.expense-info{flex:1;min-width:0;}
+.expense-name{font-size:14px;font-weight:500;color:var(--text);}
+.expense-meta{font-size:11px;color:var(--text2);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.account-badge{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;}
+.ext-badge{background:var(--amber-light);color:var(--amber);font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;}
+.expense-right{text-align:right;flex-shrink:0;}
+.expense-amount{font-size:14px;font-weight:600;}
+.expense-amount.own{color:var(--danger);}
+.expense-amount.ext{color:var(--amber);}
+.expense-date{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* Category rows */
+.cat-row{background:var(--bg);border-bottom:0.5px solid var(--border);padding:12px 16px;}
+.cat-row-top{display:flex;justify-content:space-between;margin-bottom:6px;}
+.cat-row-name{font-size:14px;color:var(--text);display:flex;align-items:center;gap:8px;}
+.cat-row-amount{font-size:14px;font-weight:600;color:var(--text);}
+.progress-bar{height:4px;background:var(--bg3);border-radius:2px;}
+.progress-fill{height:100%;border-radius:2px;transition:width 0.4s;}
+.cat-row-pct{font-size:10px;color:var(--text3);margin-top:4px;}
+
+/* Account rows */
+.account-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg);border-bottom:0.5px solid var(--border);}
+.account-info{display:flex;align-items:center;gap:10px;flex:1;min-width:0;}
+.account-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.account-name{font-size:14px;font-weight:500;color:var(--text);}
+.account-sub{font-size:11px;color:var(--text3);}
+.account-right{display:flex;align-items:center;gap:10px;}
+.account-total{font-size:14px;font-weight:600;color:var(--danger);}
+.account-total.ext{color:var(--amber);}
+.account-total.zero{color:var(--text3);font-weight:400;}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--text2);font-size:16px;padding:4px 6px;}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--danger);font-size:14px;padding:4px 6px;}
+
+/* FAB */
+.fab{position:fixed;bottom:calc(24px + var(--safe-bottom));right:20px;width:54px;height:54px;border-radius:50%;background:var(--accent);border:none;color:white;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(29,158,117,0.4);z-index:50;}
+
+/* Modals */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100;align-items:flex-end;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg);border-radius:20px 20px 0 0;padding:20px 16px calc(20px + var(--safe-bottom));width:100%;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.modal-handle{width:36px;height:4px;background:var(--bg3);border-radius:2px;margin:0 auto 16px;}
+.modal-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:16px;}
+.field-label{font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500;}
+.field-input{width:100%;padding:12px;border:0.5px solid var(--border);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:16px;margin-bottom:12px;-webkit-appearance:none;}
+.field-input:focus{outline:none;border-color:var(--accent);}
+.amount-input{font-size:28px;font-weight:600;text-align:center;}
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}
+.cat-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border:0.5px solid var(--border);border-radius:var(--radius);cursor:pointer;background:var(--bg2);transition:all 0.15s;}
+.cat-btn.selected{border-color:var(--accent);background:var(--accent-light);}
+.cat-btn span:first-child{font-size:18px;}
+.cat-btn span:last-child{font-size:9px;color:var(--text2);}
+.acc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.acc-btn{display:flex;align-items:center;gap:8px;padding:10px 12px;border:0.5px solid var(--border);border-radius:var(--radius);cursor:pointer;background:var(--bg2);}
+.acc-btn.selected{border-color:var(--accent);background:var(--accent-light);}
+.acc-btn-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.acc-btn-name{font-size:13px;color:var(--text);font-weight:500;}
+.acc-btn-sub{font-size:10px;color:var(--amber);}
+.modal-actions{display:flex;gap:8px;margin-top:6px;}
+.btn-cancel{flex:1;padding:13px;border:0.5px solid var(--border);border-radius:var(--radius);background:none;cursor:pointer;color:var(--text2);font-size:14px;font-weight:500;}
+.btn-save{flex:2;padding:13px;border:none;border-radius:var(--radius);background:var(--accent);color:white;font-size:14px;font-weight:600;cursor:pointer;}
+
+/* Toggle */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:12px;background:var(--bg2);border-radius:var(--radius);}
+.toggle-label{font-size:14px;color:var(--text);font-weight:500;}
+.toggle-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.switch{position:relative;width:48px;height:28px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;inset:0;background:var(--bg3);border-radius:14px;cursor:pointer;transition:background 0.2s;}
+.slider:before{content:'';position:absolute;width:22px;height:22px;left:3px;top:3px;background:white;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);}
+input:checked+.slider{background:var(--amber);}
+input:checked+.slider:before{transform:translateX(20px);}
+
+/* Color picker */
+.color-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.color-dot{width:28px;height:28px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:border-color 0.1s;}
+.color-dot.selected{border-color:var(--text);}
+
+/* Notes */
+.ext-note{margin:8px 16px;padding:10px 12px;background:var(--amber-light);border-radius:var(--radius);font-size:12px;color:var(--amber);font-weight:500;}
+.empty{padding:48px 16px;text-align:center;color:var(--text3);font-size:14px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-top">
+      <span class="header-title">Mis gastos</span>
+      <div class="month-nav">
+        <button onclick="changeMonth(-1)">‹</button>
+        <span class="month-label" id="month-label"></span>
+        <button onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+    <div class="summary">
+      <div class="stat-card"><div class="stat-label">Gastado (mío)</div><div class="stat-value red" id="total-spent">0€</div></div>
+      <div class="stat-card"><div class="stat-label">Presupuesto restante</div><div class="stat-value green" id="budget-left">0€</div></div>
+      <div class="stat-card"><div class="stat-label">Gastos externos</div><div class="stat-value amber" id="total-ext">0€</div></div>
+      <div class="stat-card"><div class="stat-label">Total con externos</div><div class="stat-value" id="total-all">0€</div></div>
+    </div>
+  </div>
+
+  <div class="budget-row">
+    <div><div class="budget-label">Presupuesto mensual</div><div class="budget-val" id="budget-display"></div></div>
+    <button class="edit-btn" onclick="openBudgetModal()">Editar</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('gastos',this)">Gastos</button>
+    <button class="tab" onclick="switchTab('categorias',this)">Categorías</button>
+    <button class="tab" onclick="switchTab('cuentas',this)">Cuentas</button>
+  </div>
+
+  <div class="content" id="content"></div>
+</div>
+
+<button class="fab" onclick="openModal()">+</button>
+
+<!-- Modal nuevo gasto -->
+<div class="modal-overlay" id="modal" onclick="outerClose(event,'modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nuevo gasto</div>
+    <div class="field-label">Importe (€)</div>
+    <input class="field-input amount-input" type="number" id="inp-amount" placeholder="0.00" min="0" step="0.01" inputmode="decimal"/>
+    <div class="field-label">Descripción</div>
+    <input class="field-input" type="text" id="inp-desc" placeholder="Ej: Mercadona, Gasolina..."/>
+    <div class="field-label" style="margin-bottom:6px">Categoría</div>
+    <div class="cat-grid" id="cat-grid"></div>
+    <div class="field-label" style="margin-bottom:6px">Cuenta</div>
+    <div class="acc-grid" id="acc-grid"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal')">Cancelar</button>
+      <button class="btn-save" onclick="saveExpense()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal presupuesto -->
+<div class="modal-overlay" id="budget-modal" onclick="outerClose(event,'budget-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Presupuesto mensual</div>
+    <div class="field-label">Importe (€)</div>
+    <input class="field-input amount-input" type="number" id="inp-budget" placeholder="1200" min="0" step="10" inputmode="decimal"/>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('budget-modal')">Cancelar</button>
+      <button class="btn-save" onclick="saveBudget()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal cuenta -->
+<div class="modal-overlay" id="acc-modal" onclick="outerClose(event,'acc-modal')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="acc-modal-title">Nueva cuenta</div>
+    <div class="field-label">Nombre</div>
+    <input class="field-input" type="text" id="inp-acc-name" placeholder="Ej: Revolut, Nómina..."/>
+    <div class="field-label" style="margin-bottom:8px">Color</div>
+    <div class="color-row" id="color-row"></div>
+    <div class="toggle-row">
+      <div><div class="toggle-label">Cuenta externa</div><div class="toggle-sub">No afecta al presupuesto</div></div>
+      <label class="switch"><input type="checkbox" id="inp-acc-external"/><span class="slider"></span></label>
+    </div>
+    <div class="modal-actions" id="acc-modal-actions"></div>
+  </div>
+</div>
+
+<script>
+const CATS=[
+  {id:'comida',name:'Comida',icon:'🛒',color:'#1D9E75',bg:'#E1F5EE'},
+  {id:'transporte',name:'Transporte',icon:'🚗',color:'#185FA5',bg:'#E6F1FB'},
+  {id:'ocio',name:'Ocio',icon:'🎉',color:'#BA7517',bg:'#FAEEDA'},
+  {id:'salud',name:'Salud',icon:'💊',color:'#993556',bg:'#FBEAF0'},
+  {id:'ropa',name:'Ropa',icon:'👕',color:'#7F77DD',bg:'#EEEDFE'},
+  {id:'casa',name:'Casa',icon:'🏠',color:'#3B6D11',bg:'#EAF3DE'},
+  {id:'gym',name:'Gym',icon:'💪',color:'#993C1D',bg:'#FAECE7'},
+  {id:'otros',name:'Otros',icon:'📦',color:'#5F5E5A',bg:'#F1EFE8'},
+];
+const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const PALETTE=['#1D9E75','#185FA5','#7F77DD','#993556','#BA7517','#E24B4A','#3B6D11','#993C1D','#5F5E5A','#0C447C','#4B1528','#412402'];
+
+function load(key,def){try{const v=localStorage.getItem(key);return v?JSON.parse(v):def;}catch{return def;}}
+function save(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch{}}
+
+let accounts=load('accounts',[
+  {id:'efectivo',name:'Efectivo',color:'#1D9E75',external:false},
+  {id:'tarjeta',name:'Tarjeta',color:'#185FA5',external:false},
+  {id:'bizum',name:'Bizum',color:'#7F77DD',external:false},
+  {id:'externa',name:'Externa',color:'#BA7517',external:true},
+]);
+let budget=load('budget',1200);
+let expenses=load('expenses',[]);
+let currentMonth=new Date().getMonth();
+let currentYear=new Date().getFullYear();
+let selCat='comida',selAcc='tarjeta',activeTab='gastos',editingAccId=null,selColor=PALETTE[0],nextId=load('nextId',1);
+
+function persist(){save('accounts',accounts);save('budget',budget);save('expenses',expenses);save('nextId',nextId);}
+function accMap(){const m={};accounts.forEach(a=>m[a.id]=a);return m;}
+function catMap(){const m={};CATS.forEach(c=>m[c.id]=c);return m;}
+function monthExp(){return expenses.filter(e=>{const d=new Date(e.date);return d.getMonth()===currentMonth&&d.getFullYear()===currentYear;});}
+function isExt(e){const a=accMap()[e.acc];return a&&a.external;}
+
+function updateHeader(){
+  document.getElementById('month-label').textContent=MONTHS[currentMonth]+' '+currentYear;
+  const all=monthExp();
+  const spentOwn=all.filter(e=>!isExt(e)).reduce((s,e)=>s+e.amount,0);
+  const spentExt=all.filter(e=>isExt(e)).reduce((s,e)=>s+e.amount,0);
+  const left=budget-spentOwn;
+  document.getElementById('total-spent').textContent=spentOwn.toFixed(0)+'€';
+  const elL=document.getElementById('budget-left');
+  elL.textContent=(left>=0?left.toFixed(0):'−'+Math.abs(left).toFixed(0))+'€';
+  elL.className='stat-value '+(left>=0?'green':'red');
+  document.getElementById('total-ext').textContent=spentExt.toFixed(0)+'€';
+  document.getElementById('total-all').textContent=(spentOwn+spentExt).toFixed(0)+'€';
+  document.getElementById('budget-display').textContent=budget.toLocaleString('es-ES')+'€';
+}
+
+function renderGastos(){
+  const list=monthExp().sort((a,b)=>b.date.localeCompare(a.date));
+  const cm=catMap(),am=accMap();
+  if(!list.length)return'<div class="empty">Sin gastos este mes.<br>Pulsa + para añadir uno.</div>';
+  const hasExt=list.some(e=>isExt(e));
+  let html='';
+  if(hasExt)html+='<div class="ext-note">Los gastos externos no afectan al presupuesto.</div>';
+  html+='<div class="section-header">Todos los gastos</div>';
+  list.forEach(e=>{
+    const c=cm[e.cat]||CATS[7],a=am[e.acc]||accounts[0];
+    const ext=isExt(e);const d=new Date(e.date);
+    html+=`<div class="expense-item${ext?' external':''}">
+      <div class="cat-icon" style="background:${c.bg}">${c.icon}</div>
+      <div class="expense-info">
+        <div class="expense-name">${e.desc}</div>
+        <div class="expense-meta">
+          <span class="account-badge" style="background:${a.color}22;color:${a.color}">${a.name}</span>
+          ${ext?'<span class="ext-badge">externo</span>':''}· ${c.name}
+        </div>
+      </div>
+      <div class="expense-right">
+        <div class="expense-amount ${ext?'ext':'own'}">−${e.amount.toFixed(2)}€</div>
+        <div class="expense-date">${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)}</div>
+      </div>
+    </div>`;
+  });
+  return html;
+}
+
+function renderCategorias(){
+  const list=monthExp().filter(e=>!isExt(e));
+  const total=list.reduce((s,e)=>s+e.amount,0);
+  const cm=catMap(),bycat={};
+  list.forEach(e=>{bycat[e.cat]=(bycat[e.cat]||0)+e.amount;});
+  const sorted=Object.entries(bycat).sort((a,b)=>b[1]-a[1]);
+  if(!sorted.length)return'<div class="empty">Sin gastos propios este mes.</div>';
+  let html='<div class="section-header">Solo gastos propios</div>';
+  sorted.forEach(([id,amt])=>{
+    const c=cm[id];const pct=total>0?Math.round(amt/total*100):0;
+    html+=`<div class="cat-row">
+      <div class="cat-row-top"><span class="cat-row-name">${c.icon} ${c.name}</span><span class="cat-row-amount">${amt.toFixed(2)}€</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${c.color}"></div></div>
+      <div class="cat-row-pct">${pct}% del total propio</div>
+    </div>`;
+  });
+  return html;
+}
+
+function renderCuentas(){
+  const all=monthExp(),am=accMap(),byacc={};
+  all.forEach(e=>{byacc[e.acc]=(byacc[e.acc]||0)+e.amount;});
+  let html=`<div class="section-header">Mis cuentas <button onclick="openNewAccModal()">+ Nueva</button></div>`;
+  accounts.forEach(a=>{
+    const total=byacc[a.id]||0;
+    const cls=total===0?'zero':a.external?'ext':'';
+    html+=`<div class="account-row">
+      <div class="account-info">
+        <div class="account-dot" style="background:${a.color}"></div>
+        <div>
+          <div class="account-name">${a.name}${a.external?' <span style="font-size:10px;color:#BA7517;font-weight:400">(externa)</span>':''}</div>
+          <div class="account-sub">${a.external?'No afecta al presupuesto':'Cuenta propia'}</div>
+        </div>
+      </div>
+      <div class="account-right">
+        <div class="account-total ${cls}">${total>0?'−'+total.toFixed(2):'0.00'}€</div>
+        <button class="icon-btn" onclick="openEditAccModal('${a.id}')">✎</button>
+        <button class="del-btn" onclick="deleteAccount('${a.id}')">✕</button>
+      </div>
+    </div>`;
+  });
+  return html;
+}
+
+function render(){
+  updateHeader();
+  const views={gastos:renderGastos,categorias:renderCategorias,cuentas:renderCuentas};
+  document.getElementById('content').innerHTML=views[activeTab]();
+}
+function switchTab(tab,btn){activeTab=tab;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');render();}
+function changeMonth(dir){currentMonth+=dir;if(currentMonth<0){currentMonth=11;currentYear--;}if(currentMonth>11){currentMonth=0;currentYear++;}render();}
+
+function openModal(){
+  document.getElementById('inp-amount').value='';
+  document.getElementById('inp-desc').value='';
+  selCat='comida';
+  selAcc=accounts.find(a=>!a.external)?.id||accounts[0].id;
+  renderCatGrid();renderAccGrid();
+  document.getElementById('modal').classList.add('open');
+  setTimeout(()=>document.getElementById('inp-amount').focus(),300);
+}
+function renderCatGrid(){
+  document.getElementById('cat-grid').innerHTML=CATS.map(c=>
+    `<button class="cat-btn ${selCat===c.id?'selected':''}" onclick="selCat='${c.id}';renderCatGrid()">
+      <span>${c.icon}</span><span>${c.name}</span>
+    </button>`).join('');
+}
+function renderAccGrid(){
+  document.getElementById('acc-grid').innerHTML=accounts.map(a=>
+    `<button class="acc-btn ${selAcc===a.id?'selected':''}" onclick="selAcc='${a.id}';renderAccGrid()">
+      <div class="acc-btn-dot" style="background:${a.color}"></div>
+      <div><div class="acc-btn-name">${a.name}</div>${a.external?'<div class="acc-btn-sub">externo</div>':''}</div>
+    </button>`).join('');
+}
+function saveExpense(){
+  const amt=parseFloat(document.getElementById('inp-amount').value);
+  const desc=document.getElementById('inp-desc').value.trim();
+  if(!amt||amt<=0||!desc){alert('Rellena importe y descripción');return;}
+  const today=`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
+  expenses.push({id:nextId++,amount:amt,desc,cat:selCat,acc:selAcc,date:today});
+  persist();closeModal('modal');render();
+}
+
+function openBudgetModal(){document.getElementById('inp-budget').value=budget;document.getElementById('budget-modal').classList.add('open');}
+function saveBudget(){const v=parseFloat(document.getElementById('inp-budget').value);if(!v||v<=0){alert('Introduce un presupuesto válido');return;}budget=v;persist();closeModal('budget-modal');render();}
+
+function renderColorRow(){
+  document.getElementById('color-row').innerHTML=PALETTE.map(c=>
+    `<div class="color-dot${selColor===c?' selected':''}" style="background:${c}" onclick="selColor='${c}';renderColorRow()"></div>`
+  ).join('');
+}
+function openNewAccModal(){
+  editingAccId=null;selColor=PALETTE[0];
+  document.getElementById('acc-modal-title').textContent='Nueva cuenta';
+  document.getElementById('inp-acc-name').value='';
+  document.getElementById('inp-acc-external').checked=false;
+  renderColorRow();
+  document.getElementById('acc-modal-actions').innerHTML=`
+    <button class="btn-cancel" onclick="closeModal('acc-modal')">Cancelar</button>
+    <button class="btn-save" onclick="saveAcc()">Guardar</button>`;
+  document.getElementById('acc-modal').classList.add('open');
+}
+function openEditAccModal(id){
+  editingAccId=id;const a=accounts.find(x=>x.id===id);
+  selColor=a.color;
+  document.getElementById('acc-modal-title').textContent='Editar cuenta';
+  document.getElementById('inp-acc-name').value=a.name;
+  document.getElementById('inp-acc-external').checked=a.external;
+  renderColorRow();
+  document.getElementById('acc-modal-actions').innerHTML=`
+    <button class="btn-cancel" onclick="closeModal('acc-modal')">Cancelar</button>
+    <button class="btn-save" onclick="saveAcc()">Guardar</button>`;
+  document.getElementById('acc-modal').classList.add('open');
+}
+function saveAcc(){
+  const name=document.getElementById('inp-acc-name').value.trim();
+  if(!name){alert('Escribe un nombre para la cuenta');return;}
+  const external=document.getElementById('inp-acc-external').checked;
+  if(editingAccId){
+    const a=accounts.find(x=>x.id===editingAccId);
+    a.name=name;a.color=selColor;a.external=external;
+  } else {
+    accounts.push({id:'acc_'+Date.now(),name,color:selColor,external});
+  }
+  persist();closeModal('acc-modal');render();
+}
+function deleteAccount(id){
+  if(accounts.length<=1){alert('Necesitas al menos una cuenta');return;}
+  const used=expenses.some(e=>e.acc===id);
+  if(used&&!confirm('Esta cuenta tiene gastos asociados. ¿Eliminar igualmente?'))return;
+  accounts=accounts.filter(a=>a.id!==id);
+  persist();render();
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function outerClose(e,id){if(e.target===document.getElementById(id))closeModal(id);}
+
+render();
+</script>
+</body>
+</html>
